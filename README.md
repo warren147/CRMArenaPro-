@@ -6,7 +6,7 @@ Everything speaks a simple HTTP **A2A** protocol (JSON): `Observation → Action
 
 ---
 
-## ✨ What’s in this repo
+## What’s in this repo
 
 ```
 crm_arena_pro/
@@ -36,7 +36,7 @@ crm_arena_pro/
 
 ---
 
-## 🧉 Protocol (A2A-0.1) in one minute
+## Protocol (A2A-0.1) in one minute
 
 - **Green → White**: `observation` (task context, constraints)
 - **White → Green**:
@@ -48,7 +48,7 @@ All turns are stored in a **session transcript** for auditing.
 
 ---
 
-## ✅ Prerequisites
+## Prerequisites
 
 - Python **3.9+** (tested on 3.10–3.13)
 - `pip` (or venv/conda)
@@ -56,7 +56,7 @@ All turns are stored in a **session transcript** for auditing.
 
 ---
 
-## 📦 Install
+## Install
 
 ```bash
 # from repo root
@@ -69,7 +69,7 @@ pip install fastapi uvicorn httpx pydantic
 
 ---
 
-## ⚙️ Environment Variables (optional)
+## Environment Variables (optional)
 
 ```bash
 # Where Green posts history (your White Agent URL)
@@ -86,7 +86,7 @@ Defaults work out-of-the-box; set these only if you change ports/hosts.
 
 ---
 
-## 🚀 Start All Servers (3 terminals)
+## Start All Servers (3 terminals)
 
 ### A) White Agent (mock)
 
@@ -116,7 +116,7 @@ Open: [**http://localhost:9200**](http://localhost:9200)
 
 ---
 
-## 🤪 Quick CLI Smoke Tests (no UI)
+## Quick CLI Smoke Tests (no UI)
 
 **Green card**
 
@@ -150,7 +150,7 @@ curl -s "http://localhost:9101/sessions/$SID" | jq .
 
 ---
 
-## 🧠 What the Green Agent Evaluates
+## What the Green Agent Evaluates
 
 - **Correctness**:
   - **Exact Match** for IDs (ServiceAgent)
@@ -161,48 +161,6 @@ curl -s "http://localhost:9101/sessions/$SID" | jq .
 
 ---
 
-## 🎨 Suggested 1-Minute Demo Flow
-
-1. **ServiceAgent → medium**: proposal (queue lookup) → decision → **EM=1**
-2. **Analyst → hard**: proposal (KB lookup) → decision → **F1** printed
-3. **Manager → hard**: proposal (fetch series) → decision → **MAPE** (0 if perfect)
-
-In the UI, show **Validation** (action\_valid: true), **Scores**, and **Transcript**.
-
----
-
-## 🔧 Troubleshooting
-
-**UI says “failed to fetch”**
-
-- Start all three servers; confirm Green card:
-  ```bash
-  curl http://localhost:9101/a2a/card
-  ```
-- The viewer proxies `/api/start`, `/api/continue`, `/api/session/*` — no CORS needed.\
-  If you edited ports, `export GREEN_URL=http://localhost:<your-port>` before starting the viewer.
-
-**Hard tasks never finish**
-
-- Ensure Green sends **full history** each turn (already in `green_server.py`).
-- Ensure White hard cases are **proposal → decision** (one Continue).\
-  The provided `white_mock.py` already does this.
-
-**500 “Unexpected token 'I'… not valid JSON”**
-
-- That’s the UI parsing an HTML 500 page.\
-  Check Green logs; a common cause is a NameError in `/a2a/continue`.\
-  The current file includes the fix (creates the `items` list and uses `_build_full_history_envelope`).
-
-**Circular import / future import error**
-
-- We removed `from __future__ import annotations` (unnecessary on 3.13) and fixed self-imports.\
-  If you edited `a2a_protocol.py`, ensure it doesn’t import itself and restart without `--reload` once:
-  ```bash
-  uvicorn green_agent.green_server:app --port 9101
-  ```
-
----
 
 ## 📏 Metrics (details)
 
@@ -235,63 +193,4 @@ All implemented in ``.
 - `POST /a2a/step` (expects `{"history":[...]}`; replies with `action_proposal` or `decision`)
 
 ---
-
-## 🧪 Validation & Reproducibility
-
-- Deterministic mock endpoints remove network drift.
-- Green stores the **complete** A2A transcript; you can audit every turn.
-- Difficulty tiers enforce step count (easy=1, medium=2, hard=2 turns).
-
----
-
-## 🦭 Mapping to the Grading Rubric
-
-- **Analysis (9.1):** Docs note ambiguity, drift, traceability; fixed via normalization & full transcripts.
-- **Faithfulness (9.2):** Same task families & metrics; results comparable to original.
-- **Quality Assurance (9.3):** Personas × difficulties, edge cases, and complementary metrics.
-- **Evaluator Quality (9.4):** Unified evaluator, deterministic, transparent logging.
-- **Validation (9.5):** Manual transcript checks, metric recomputation, stress tests.
-- **Reliability (9.6):** Offline mocks, allowlist validator, multi-seed reproducibility.
-- **Bias/Contamination (9.7):** Allowlist + deterministic data reduce leakage; plan multilingual/holdout variants.
-- **Impact (9.8):** Clear code layout, UI viewer, protocol docs, ready to extend.
-
----
-
-## 🌱 Optional: Upgrading to a real LLM later
-
-Right now everything is deterministic (great for class demo).\
-To convert **White** to an LLM-backed agent:
-
-- Replace rule branches in `white_mock.py` with `client.chat.completions.create(...)`
-- Parse the model’s text into the A2A `action_proposal` or `decision` JSON
-- Keep the Green side unchanged — it already evaluates any compliant White
-
----
-
-## 📔 License / Attribution
-
-Class project scaffold for agentic evaluation.\
-Credit: CRM Arena Pro+ Green Agent (W. Chang).\
-Based on an A2A-style orchestration inspired by AgentBeats patterns.
-
----
-
-## 😟 Need help fast?
-
-- Verify cards:
-  ```bash
-  curl http://localhost:9101/a2a/card
-  curl http://localhost:9100/a2a/card
-  ```
-- Start a session and continue once; inspect transcript:
-  ```bash
-  # start
-  curl -X POST "http://localhost:9101/a2a/start?persona=ServiceAgent&difficulty=hard"
-  # continue
-  curl -X POST "http://localhost:9101/a2a/continue" -d "session_id=<SID>"
-  # transcript
-  curl "http://localhost:9101/sessions/<SID>"
-  ```
-
-If anything still looks off, paste the JSON you got back (and any server stack trace) and which persona/difficulty you ran.
 
