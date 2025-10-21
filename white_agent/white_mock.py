@@ -199,24 +199,17 @@ async def step(payload: Dict[str, Any]):
         ))
 
     if case_id == "service_hard_003":
-        # 1st: KB search about refund policy; 2nd: fetch escalation queue; 3rd: decide
-        if prior_proposals < 1:
+        if prior_proposals < 2:
             return JSONResponse(content=_make_action_proposal(
                 session_id, turn_next,
                 url="http://localhost/mock/kb?q=refund%20policy%20violation",
                 justification="Verify refund policy violation condition.",
                 expectation="KB should reference refund policy."
             ))
-        if prior_proposals < 2:
-            return JSONResponse(content=_make_action_proposal(
-                session_id, turn_next,
-                url="http://localhost/mock/queues?rule=Policy%20Escalation",
-                justification="Find the Policy Escalation queue for routing.",
-                expectation="Should return escalation queue ID."
-            ))
+        # After first proposal, decide
         return JSONResponse(content=_decision(session_id, turn_next,
             ids=GROUND_TRUTH[case_id]["ids"],
-            plan="Policy violation confirmed in KB; escalate to Policy Escalation queue.",
+            plan="Policy violation confirmed; escalate to Policy Escalation queue.",
             confidence=0.94
         ))
 
@@ -243,23 +236,16 @@ async def step(payload: Dict[str, Any]):
         ))
 
     if case_id == "analyst_hard_003":
-        if prior_proposals < 1:
+        if prior_proposals < 2:
             return JSONResponse(content=_make_action_proposal(
                 session_id, turn_next,
                 url="http://localhost/mock/kb?q=warranty%20escalation%20protocol",
                 justification="Review escalation protocol.",
                 expectation="KB that mentions escalation protocol."
             ))
-        if prior_proposals < 2:
-            return JSONResponse(content=_make_action_proposal(
-                session_id, turn_next,
-                url="http://localhost/mock/kb?q=refund%20policy%20violation",
-                justification="Confirm proof requirement before escalation.",
-                expectation="KB mentioning proof of purchase."
-            ))
         return JSONResponse(content=_decision(session_id, turn_next,
             text=GROUND_TRUTH[case_id]["text"],
-            plan="Review policy, confirm proof requirement, then escalate as prescribed.",
+            plan="Review protocol then escalate as prescribed.",
             confidence=0.92
         ))
 
@@ -286,7 +272,7 @@ async def step(payload: Dict[str, Any]):
         ))
 
     if case_id == "manager_hard_003":
-        if prior_proposals < 1:
+        if prior_proposals < 2:
             return JSONResponse(content=_make_action_proposal(
                 session_id, turn_next,
                 url="http://localhost/mock/cases?type=Login%20Issue&window=3m",

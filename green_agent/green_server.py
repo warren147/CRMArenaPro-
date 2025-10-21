@@ -6,10 +6,9 @@ from fastapi.responses import JSONResponse
 import os, uuid, httpx, json
 from .a2a_protocol import HistoryEnvelope, HistoryItem
 
-# Build a FULL envelope from everything we've stored so far
 def _build_full_history_envelope(state) -> dict:
     from .a2a_protocol import HistoryEnvelope, HistoryItem
-    items: list[HistoryItem] = []
+    items = []
     for msg in state.history:
         if isinstance(msg, dict):
             if msg.get("type") == "observation" and msg.get("role") == "green":
@@ -196,6 +195,7 @@ async def continue_a2a(session_id: str):
     if state.turn > MAX_ROUNDS:
         return {"session_id": session_id, "note": "max rounds reached"}
 
+    # New observation for this turn
     obs = make_observation(
         session_id=session_id,
         turn=state.turn,
@@ -206,19 +206,10 @@ async def continue_a2a(session_id: str):
     )
     state.history.append(obs.dict())
 
-    items = [HistoryItem(role="user", content=obs.dict())]
-    for msg in state.history:
-        if isinstance(msg, dict) and msg.get("role") == "white":
-            items.append(HistoryItem(role="agent", content=msg))
-    history = HistoryEnvelope(history=items)
+    history_payload = _build_full_history_envelope(state)
 
-    prev_white = None
-    if state.last_white and state.last_white.get("type") == "action_proposal":
-        prev_white = ActionProposal(**state.last_white)
-
-    history = pack_history(obs, previous_white=prev_white)
     try:
-        white_msg = await _post_to_white(history.dict())
+        white_msg = await _post_to_white(history_payload)
     except Exception as e:
         raise HTTPException(502, f"white agent error: {e}")
 
