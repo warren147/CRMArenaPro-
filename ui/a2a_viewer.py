@@ -1,7 +1,6 @@
 # ui/a2a_viewer.py
 from __future__ import annotations
-import os, json
-from typing import Any, Dict
+import os
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 import httpx
@@ -25,7 +24,6 @@ HTML = r"""
       <h1 class="text-2xl font-bold">CRM Arena Pro — A2A Viewer</h1>
       <span class="text-xs text-slate-500">Green URL: <code id="green-url"></code></span>
     </header>
-
     <section class="bg-white rounded-xl shadow-sm border p-4 space-y-4">
       <h2 class="font-semibold">Task Controls</h2>
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -55,7 +53,6 @@ HTML = r"""
         </div>
       </div>
     </section>
-
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="bg-white rounded-xl shadow-sm border p-4 space-y-3">
         <h2 class="font-semibold">Latest Result</h2>
@@ -74,7 +71,6 @@ HTML = r"""
           <pre id="last-response" class="text-xs bg-slate-50 border rounded-md p-2 overflow-auto h-48">—</pre>
         </div>
       </div>
-
       <div class="bg-white rounded-xl shadow-sm border p-4 space-y-3">
         <h2 class="font-semibold">Session Transcript</h2>
         <div class="flex gap-2">
@@ -85,11 +81,9 @@ HTML = r"""
       </div>
     </section>
   </div>
-
 <script>
 const GREEN_URL = "{{GREEN_URL}}";
 document.getElementById("green-url").innerText = GREEN_URL;
-
 const btnStart = document.getElementById("btn-start");
 const btnContinue = document.getElementById("btn-continue");
 const btnRefresh = document.getElementById("btn-refresh");
@@ -97,7 +91,6 @@ const btnCopy = document.getElementById("btn-copy");
 const personaSel = document.getElementById("persona");
 const diffSel = document.getElementById("difficulty");
 const sessionIdEl = document.getElementById("session-id");
-
 const lastRespEl = document.getElementById("last-response");
 const transcriptEl = document.getElementById("transcript");
 const validationEl = document.getElementById("validation");
@@ -116,17 +109,12 @@ async function startSession(){
   validationEl.textContent = "—";
   scoresEl.textContent = "—";
   lastRespEl.textContent = "Starting…";
-
   const persona = personaSel.value;
   const difficulty = diffSel.value;
-
   try {
-    const r = await fetch(`${GREEN_URL}/a2a/start?persona=${encodeURIComponent(persona)}&difficulty=${encodeURIComponent(difficulty)}`, {
-      method: "POST"
-    });
+    const r = await fetch(`${GREEN_URL}/a2a/start?persona=${encodeURIComponent(persona)}&difficulty=${encodeURIComponent(difficulty)}`, { method: "POST" });
     const data = await r.json();
     show(data, lastRespEl);
-
     const sid = data.session_id || (data.feedback && data.feedback.session_id);
     if (sid){
       sessionIdEl.value = sid;
@@ -134,10 +122,8 @@ async function startSession(){
       btnRefresh.disabled = false;
       btnCopy.disabled = false;
     }
-
     if (data.validation) show(data.validation, validationEl);
     if (data.scores)     show(data.scores, scoresEl);
-
   } catch (e){
     lastRespEl.textContent = "Error: " + e;
   } finally {
@@ -148,20 +134,15 @@ async function startSession(){
 async function continueSession(){
   const sid = sessionIdEl.value.trim();
   if (!sid){ alert("No session id"); return; }
-
   btnContinue.disabled = true;
   lastRespEl.textContent = "Continuing…";
-
   try {
     const r = await fetch(`/api/continue?session_id=${encodeURIComponent(sid)}`, { method: "POST" });
     const data = await r.json();
     show(data, lastRespEl);
-
     if (data.validation) show(data.validation, validationEl);
     if (data.scores)     show(data.scores, scoresEl);
-
     btnContinue.disabled = data && data.done === true;
-
   } catch(e){
     lastRespEl.textContent = "Error: " + e;
   }
@@ -193,8 +174,6 @@ btnStart.addEventListener("click", startSession);
 btnContinue.addEventListener("click", continueSession);
 btnRefresh.addEventListener("click", refreshTranscript);
 btnCopy.addEventListener("click", copyTranscript);
-
-// proxy Continue/Session calls through this UI server to avoid CORS issues
 </script>
 </body>
 </html>

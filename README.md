@@ -1,7 +1,7 @@
 # CRM Arena Pro+ (A2A) — README
 
 A lightweight, reproducible benchmark harness for CRM-style agents.\
-**Green Agent** = orchestrator/evaluator. **White Agent** = agent under test.\
+**Green Agent** = orchestrator/evaluator/environment. **White Agent** = agent under test.\
 Everything speaks a simple HTTP **A2A** protocol (JSON): `Observation → ActionProposal → Feedback → Decision`.
 
 ---
@@ -11,15 +11,16 @@ Everything speaks a simple HTTP **A2A** protocol (JSON): `Observation → Action
 ```
 crm_arena_pro/
 ├── green_agent/
-│   ├── __init__.py
 │   ├── a2a_protocol.py      # A2A message schemas + validation helpers
 │   ├── evaluator.py         # Metrics: ExactMatch, F1, MAPE (+ normalizers)
 │   └── green_server.py      # FastAPI server (orchestrator + scoring)
+├── ui/
+│   └── a2a_viewer.py        # Minimal web UI (FastAPI) to drive/inspect runs
 ├── white_agent/
-│   ├── __init__.py
 │   └── white_mock.py        # Mock White Agent (deterministic, no LLM)
-└── ui/
-    └── a2a_viewer.py        # Minimal web UI (FastAPI) to drive/inspect runs
+├── .gitignore
+├── README.md
+└── requirements.txt
 ```
 
 **Personas & metrics**
@@ -27,6 +28,7 @@ crm_arena_pro/
 - **ServiceAgent** → queue routing (IDs) → **Exact Match**
 - **Analyst** → policy text extraction → **F1**
 - **Manager** → numeric series / trend → **MAPE**
+- **All Agents** → **Confidentiality Awareness** (PII leakage check)
 
 **Difficulty tiers**
 
@@ -38,10 +40,10 @@ crm_arena_pro/
 
 ## Protocol (A2A-0.1) in one minute
 
-- **Green → White**: `observation` (task context, constraints)
+- **Green → White**: `observation` (task context, constraints, available tools)
 - **White → Green**:
-  - `action_proposal` (includes executed request **and** result), or
-  - `decision` (final answers, plan, confidence)
+    - `action_proposal` (includes executed request **and** result from Green APIs), or
+    - `decision` (final answers, plan, confidence)
 - **Green → White**: `feedback` on proposals; **scores** on decision
 
 All turns are stored in a **session transcript** for auditing.
@@ -175,12 +177,22 @@ curl -s "http://localhost:9101/sessions/$SID" | jq .
 - **MAPE (Mean Absolute Percentage Error)**\
   Safe divide with zero-handling; compares numeric arrays parsed from answers.\
   Output: `{"MAPE": 0..∞}` (lower is better; 0 = perfect)
+- **Confidentiality**\
+  Keyword/Regex matching against known PII in the environment.
+  Output: `{"is_safe": bool, "leaks_found": [...]}`
 
-All implemented in ``.
+All implemented in `green_agent/evaluator.py`.
 
 ---
 
 ## 🔌 Endpoints (Green)
+
+**Environment APIs (Simulated Salesforce)**
+
+- `GET /salesforce/soql` → Execute structured SQL-like queries (e.g. `SELECT Id FROM Case`)
+- `GET /salesforce/sosl` → Execute keyword search (e.g. `FIND {Billing}`)
+
+**Orchestrator APIs**
 
 - `GET /a2a/card` → Capability card (protocol, personas, tasks, metrics)
 - `POST /a2a/start?persona=…&difficulty=…` → Starts a session; returns Feedback or Decision
@@ -189,8 +201,6 @@ All implemented in ``.
 
 **White (mock)**
 
-- `GET /a2a/card`
 - `POST /a2a/step` (expects `{"history":[...]}`; replies with `action_proposal` or `decision`)
 
 ---
-
