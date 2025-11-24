@@ -1,4 +1,5 @@
 # green_agent/a2a_protocol.py
+
 from typing import Any, Dict, List, Literal, Optional, Union
 from pydantic import BaseModel, Field, validator
 from enum import Enum

@@ -1,6 +1,7 @@
 # green_agent/evaluator.py
+
 from __future__ import annotations
-from typing import Any, Dict, List, Iterable, Optional
+from typing import Any, Dict, List, Iterable
 import json
 
 def _tokens(s: str) -> List[str]:
@@ -67,7 +68,6 @@ def llm_judge_reasoning(instruction: str, plan: str) -> Dict[str, Any]:
     # if not api_key: return {"score": -1, "reason": "No API Key"}
     # client = OpenAI(api_key=api_key)
     # prompt = f"Task: {instruction}\nPlan: {plan}\nDid they solve it logically? JSON Only."
-    # ... call GPT ...
 
     return {"score": 0.8, "reason": "Logic appears sound (Mock LLM Judge)"}
 
